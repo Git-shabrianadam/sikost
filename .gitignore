@@ -1,0 +1,23 @@
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE settings
+.vscode/
+.idea/
+
+# Node packages (if ever used)
+node_modules/
+
+# Composer packages
+vendor/
+
+# Temporary files
+*.tmp
+*.cache
