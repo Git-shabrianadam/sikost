@@ -6,7 +6,7 @@ $pdf = new FPDF();
 
 $pdf->AddPage();
 
-$pdf->SetFont('Arial','B',16);
+$pdf->SetFont('Courier','B',16);
 $pdf->Cell(0,10,'FPDF is working!',0,1,'C');
-
+$pdf->Cell(0,10,'PDF bekerja jika aflah sudah menikah',0,1,'C');
 $pdf->Output();
