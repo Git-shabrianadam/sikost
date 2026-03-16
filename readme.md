@@ -13,3 +13,8 @@ development sequence : git add ., git commit -m "what you implemented"
 
 end sequence : git status, git add .
 then git commit -m "WIP : what you want to continue tomorrow"
+
+repository source, github : 
+PS C:\xampp\htdocs\sikost> git remote -v
+origin  https://github.com/Git-shabrianadam/sikost.git (fetch)
+origin  https://github.com/Git-shabrianadam/sikost.git (push)

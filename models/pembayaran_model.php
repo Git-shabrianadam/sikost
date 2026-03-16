@@ -16,16 +16,13 @@ class PembayaranModel {
             FROM v_master_pembayaran
         ";
 
-        $result = pg_query($this->db, $query);
-        $data = [];
-        if ($result) {
+        $stmt = $this->db->query($query);
 
-            while ($row = pg_fetch_assoc($result)) {
-                $data[] = $row;
-            }
+        if(!$stmt){
+            return [];
         }
 
-        return $data;
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 ?>

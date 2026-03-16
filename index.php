@@ -2,15 +2,18 @@
 
 require_once __DIR__ . '/config/db.php';
 
-$db = getDB();
+$database = new Database();
+$db = $database->getConnection();
 
 #Index sebagai router karena controller dan model tidak sentralized
-$request = $_SERVER['REQUEST_URI'];
+$request = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$request = str_replace('/sikost', '', $request);
+$request = str_replace('index.php', '', $request);
 $request = trim($request, '/');
 
 $segments = explode('/', $request);
 
-$controllerName = $segments[0] ?? '';
+$controllerName = !empty($segments[0]) ? $segments[0] : 'pembayaran';
 $method = $segments[1] ?? 'index';
 
 switch ($controllerName) {
@@ -34,7 +37,7 @@ switch ($controllerName) {
         header("Content-Type: application/json");
         echo json_encode([
             "status" => "error",
-            "message" => "Route tidak sesuai"
+            "message" => "Route pada switchc-case tidak sesuai"
         ]);
         exit;
 }
@@ -47,7 +50,6 @@ if (!method_exists($controller, $method)) {
         "message" => "Method tidak sesuai"
     ]);
     exit;
-
 }
 
 $controller->$method();
