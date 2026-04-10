@@ -1,15 +1,15 @@
 <?php
 
 class KamarModel {
-    # Properties untuk kamar_model dan koneksi databasenya
+
     private $db;
-    
+
     public function __construct($db)
     {
         $this->db = $db;
     }
 
-    # GET ALL ROOMS
+    # GET ALL kamar
     public function getAll()
     {
         $query = "
@@ -24,7 +24,7 @@ class KamarModel {
     }
 
 
-    # GET ROOM BY ID
+    # GET kamar BY ID
     public function getById($id)
     {
         $query = "
@@ -43,72 +43,153 @@ class KamarModel {
     }
 
 
-    # CREATE ROOM
+    # CREATE kamar
     public function create($data)
     {
-        $query = "
-            INSERT INTO kamar
-            (nama_kamar, harga_kamar, id_tipe_kamar, status_kamar)
-            VALUES
-            (:nama_kamar, :harga_kamar, :id_tipe_kamar, :status_kamar)
-            RETURNING *
-        ";
+        try {
 
-        $stmt = $this->db->prepare($query);
+            # Prevent duplicate nama_kamar
+            $checkQuery = "
+                SELECT COUNT(*)
+                FROM kamar
+                WHERE nama_kamar = :nama_kamar
+            ";
 
-        $stmt->execute([
-            ":nama_kamar" => $data["nama_kamar"],
-            ":harga_kamar" => $data["harga_kamar"],
-            ":id_tipe_kamar" => $data["id_tipe_kamar"],
-            ":status_kamar" => $data["status_kamar"]
-        ]);
+            $stmtCheck = $this->db->prepare($checkQuery);
 
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmtCheck->execute([
+                ":nama_kamar" => $data["nama_kamar"]
+            ]);
+
+            if ($stmtCheck->fetchColumn() > 0) {
+
+                return [
+                    "error" => "Nama kamar sudah digunakan"
+                ];
+            }
+
+
+            $query = "
+                INSERT INTO kamar
+                (nama_kamar, harga_kamar, id_tipe_kamar, status_kamar)
+                VALUES
+                (:nama_kamar, :harga_kamar, :id_tipe_kamar, :status_kamar)
+                RETURNING *
+            ";
+
+            $stmt = $this->db->prepare($query);
+
+            $stmt->execute([
+                ":nama_kamar" => $data["nama_kamar"],
+                ":harga_kamar" => $data["harga_kamar"],
+                ":id_tipe_kamar" => $data["id_tipe_kamar"],
+                ":status_kamar" => $data["status_kamar"]
+            ]);
+
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+
+        } catch (Exception $e) {
+
+            return [
+                "error" => $e->getMessage()
+            ];
+        }
     }
 
-
-    # UPDATE ROOM
+    # UPDATE kamar
     public function update($id, $data)
     {
-        $query = "
-            UPDATE kamar
-            SET
-                nama_kamar = :nama_kamar,
-                harga_kamar = :harga_kamar,
-                id_tipe_kamar = :id_tipe_kamar,
-                status_kamar = :status_kamar
-            WHERE id_kamar = :id_kamar
-            RETURNING *
-        ";
+        try {
 
-        $stmt = $this->db->prepare($query);
+            $query = "
+                UPDATE kamar
+                SET
+                    nama_kamar = :nama_kamar,
+                    harga_kamar = :harga_kamar,
+                    id_tipe_kamar = :id_tipe_kamar,
+                    status_kamar = :status_kamar
+                WHERE id_kamar = :id_kamar
+                RETURNING *
+            ";
 
-        $stmt->execute([
-            ":id_kamar" => $id,
-            ":nama_kamar" => $data["nama_kamar"],
-            ":harga_kamar" => $data["harga_kamar"],
-            ":id_tipe_kamar" => $data["id_tipe_kamar"],
-            ":status_kamar" => $data["status_kamar"]
-        ]);
+            $stmt = $this->db->prepare($query);
 
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt->execute([
+                ":id_kamar" => $id,
+                ":nama_kamar" => $data["nama_kamar"],
+                ":harga_kamar" => $data["harga_kamar"],
+                ":id_tipe_kamar" => $data["id_tipe_kamar"],
+                ":status_kamar" => $data["status_kamar"]
+            ]);
+
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+
+        } catch (Exception $e) {
+
+            return [
+                "error" => $e->getMessage()
+            ];
+        }
     }
 
 
-    # DELETE ROOM
+    # DELETE kamar sdh di enforce
     public function delete($id)
     {
-        $query = "
-            DELETE FROM kamar
-            WHERE id_kamar = :id_kamar
-        ";
+        try {
 
-        $stmt = $this->db->prepare($query);
+            $this->db->beginTransaction();
 
-        return $stmt->execute([
-            ":id_kamar" => $id
-        ]);
+            # cek dulu ada penghuni apa gak
+            $checkQuery = "
+                SELECT COUNT(*)
+                FROM kamar_penghuni
+                WHERE id_kamar = :id_kamar
+                AND is_aktif = true
+            ";
+
+            $stmtCheck = $this->db->prepare($checkQuery);
+
+            $stmtCheck->execute([
+                ":id_kamar" => $id
+            ]);
+
+            $activeCount = $stmtCheck->fetchColumn();
+
+            if ($activeCount > 0) {
+
+                $this->db->rollBack();
+
+                return [
+                    "error" => "Kamar masih memiliki penghuni aktif"
+                ];
+            }
+
+            # Delete di stabilkan tdk bisa dihapus saat masih ada penghuni aktif
+            $deleteQuery = "
+                DELETE FROM kamar
+                WHERE id_kamar = :id_kamar
+            ";
+
+            $stmtDelete = $this->db->prepare($deleteQuery);
+            $stmtDelete->execute([
+                ":id_kamar" => $id
+            ]);
+
+            $this->db->commit();
+
+            return [
+                "message" => "Kamar berhasil dihapus"
+            ];
+
+        } catch (Exception $e) {
+
+            $this->db->rollBack();
+
+            return [
+                "error" => $e->getMessage()
+            ];
+        }
     }
-
 }
 ?>

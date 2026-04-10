@@ -27,6 +27,8 @@ class KamarController {
     # GET /kamar/show?id=1
     public function show()
     {
+        header("Content-Type: application/json");
+
         $id = $_GET["id"] ?? null;
 
         if (!$id) {
@@ -39,17 +41,25 @@ class KamarController {
 
         $data = $this->model->getById($id);
 
+        if (!$data) {   
+            echo json_encode([
+                "status" => "error",
+                "message" => "Data tidak ditemukan"
+            ]);
+            return;
+        }
+
         echo json_encode([
             "status" => "success",
             "data" => $data
         ]);
     }
 
-    # POST /kamar/store
+    # INSERT kamar method POST /kamar/store
     public function store()
     {
+        header("Content-Type: application/json");
         $input = json_decode(file_get_contents("php://input"), true);
-
         $result = $this->model->create($input);
 
         echo json_encode([
@@ -62,7 +72,6 @@ class KamarController {
     public function update()
     {
         $id = $_GET["id"] ?? null;
-
         if (!$id) {
             echo json_encode([
                 "status" => "error",
@@ -72,7 +81,6 @@ class KamarController {
         }
 
         $input = json_decode(file_get_contents("php://input"), true);
-
         $result = $this->model->update($id, $input);
 
         echo json_encode([
